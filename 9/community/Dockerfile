@@ -23,7 +23,7 @@ RUN set -eux; \
     groupadd --system --gid 1000 sonarqube; \
     useradd --system --uid 1000 --gid sonarqube sonarqube; \
     apt-get update; \
-    apt-get install -y gnupg unzip curl bash fonts-dejavu; \
+    apt-get install -y gnupg unzip curl bash fonts-dejavu xz-utils apt-transport-https; \
     echo "networkaddress.cache.ttl=5" >> "${JAVA_HOME}/conf/security/java.security"; \
     sed --in-place --expression="s?securerandom.source=file:/dev/random?securerandom.source=file:/dev/urandom?g" "${JAVA_HOME}/conf/security/java.security"; \
     # pub   2048R/D26468DE 2015-05-25
@@ -46,8 +46,22 @@ RUN set -eux; \
     ln -s "${SONARQUBE_HOME}/lib/sonar-application-${SONARQUBE_VERSION}.jar" "${SONARQUBE_HOME}/lib/sonarqube.jar"; \
     chmod -R 555 ${SONARQUBE_HOME}; \
     chmod -R ugo+wrX "${SQ_DATA_DIR}" "${SQ_EXTENSIONS_DIR}" "${SQ_LOGS_DIR}" "${SQ_TEMP_DIR}"; \
-    apt-get remove -y gnupg unzip curl; \
-    rm -rf /var/lib/apt/lists/*;
+    curl --fail --location --output sonar-flutter-plugin.jar --silent --show-error https://github.com/insideapp-oss/sonar-flutter/releases/download/0.5.0/sonar-flutter-plugin-0.5.0.jar; \
+    mv sonar-flutter-plugin.jar  "${SONARQUBE_HOME}/extensions/plugins/"; \
+    curl --fail --location --output flutter_linux_stable.tar.xz --silent --show-error https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.13.2-stable.tar.xz; \
+    tar xf flutter_linux_stable.tar.xz; \
+    rm flutter_linux_stable.tar.xz; \
+    export PATH="$PATH:`pwd`/flutter/bin"; \
+    # wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/dart.gpg; \
+    # echo 'deb [signed-by=/usr/share/keyrings/dart.gpg arch=amd64] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main' | tee /etc/apt/sources.list.d/dart_stable.list; \
+    # apt-get update; \
+    # apt-get install dart; \
+    # curl --fail --location --output dart_amd64.deb --silent --show-error https://storage.googleapis.com/dart-archive/channels/stable/release/latest/linux_packages/dart_3.1.0-1_amd64.deb; \
+    # dpkg -i dart_amd64.deb; \
+    # rm dart_amd64.deb; \
+    # export PATH="$PATH:/usr/lib/dart/bin"; \
+    rm -rf /var/lib/apt/lists/*; \
+    apt-get remove -y gnupg unzip curl;
 
 COPY entrypoint.sh ${SONARQUBE_HOME}/docker/
 
