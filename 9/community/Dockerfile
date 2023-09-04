@@ -1,4 +1,5 @@
 FROM eclipse-temurin:17-jre
+# FROM --platform=linux/amd64 eclipse-temurin:17-jre
 
 LABEL org.opencontainers.image.url=https://github.com/SonarSource/docker-sonarqube
 
@@ -21,9 +22,9 @@ ENV JAVA_HOME='/opt/java/openjdk' \
 
 RUN set -eux; \
     groupadd --system --gid 1000 sonarqube; \
-    useradd --system --uid 1000 --gid sonarqube sonarqube; \
+    useradd -m --system --uid 1000 --gid sonarqube sonarqube; \
     apt-get update; \
-    apt-get install -y gnupg unzip curl bash fonts-dejavu xz-utils apt-transport-https; \
+    apt-get install -y gnupg unzip curl bash fonts-dejavu xz-utils apt-transport-https git; \
     echo "networkaddress.cache.ttl=5" >> "${JAVA_HOME}/conf/security/java.security"; \
     sed --in-place --expression="s?securerandom.source=file:/dev/random?securerandom.source=file:/dev/urandom?g" "${JAVA_HOME}/conf/security/java.security"; \
     # pub   2048R/D26468DE 2015-05-25
@@ -51,7 +52,7 @@ RUN set -eux; \
     curl --fail --location --output flutter_linux_stable.tar.xz --silent --show-error https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.13.2-stable.tar.xz; \
     tar xf flutter_linux_stable.tar.xz; \
     rm flutter_linux_stable.tar.xz; \
-    export PATH="$PATH:`pwd`/flutter/bin"; \
+    export PATH="$PATH:/opt/flutter/flutter/bin"; \
     # wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/dart.gpg; \
     # echo 'deb [signed-by=/usr/share/keyrings/dart.gpg arch=amd64] https://storage.googleapis.com/download.dartlang.org/linux/debian stable main' | tee /etc/apt/sources.list.d/dart_stable.list; \
     # apt-get update; \
@@ -60,8 +61,11 @@ RUN set -eux; \
     # dpkg -i dart_amd64.deb; \
     # rm dart_amd64.deb; \
     # export PATH="$PATH:/usr/lib/dart/bin"; \
+    chown sonarqube:sonarqube -R /opt/flutter; \
     rm -rf /var/lib/apt/lists/*; \
     apt-get remove -y gnupg unzip curl;
+
+ENV PATH="/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:${PATH}"
 
 COPY entrypoint.sh ${SONARQUBE_HOME}/docker/
 
