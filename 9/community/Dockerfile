@@ -61,11 +61,12 @@ RUN set -eux; \
     # dpkg -i dart_amd64.deb; \
     # rm dart_amd64.deb; \
     # export PATH="$PATH:/usr/lib/dart/bin"; \
+    echo export PATH="$PATH:/opt/flutter/bin" >> /home/sonarqube/.bashrc; \
     chown sonarqube:sonarqube -R /opt/flutter; \
     rm -rf /var/lib/apt/lists/*; \
     apt-get remove -y gnupg unzip curl;
 
-ENV PATH="/opt/flutter/bin:/opt/flutter/bin/cache/dart-sdk/bin:${PATH}"
+ENV flutter="/opt/flutter/bin/flutter"
 
 COPY entrypoint.sh ${SONARQUBE_HOME}/docker/
 
